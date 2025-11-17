@@ -8,8 +8,9 @@ import numpy as np
 app = Flask(__name__)
 
 # Load model AI
-MODEL_PATH = "plant_model.h5"  # ganti sesuai nama file model-mu
+MODEL_PATH = os.path.join("model", "plant_model.h5")  # <-- sesuaikan nama folder & file
 model = tf.keras.models.load_model(MODEL_PATH)
+
 
 # Daftar label sesuai training
 labels = ["bacterial_spot", "early_blight", "late_blight", "leaf_mold", "healthy"]
