@@ -1,57 +1,79 @@
 from flask import Flask, request, jsonify
-from werkzeug.utils import secure_filename
-import os
-import tensorflow as tf
-from tensorflow.keras.preprocessing import image
 import numpy as np
+from PIL import Image
+import tensorflow as tf
 
 app = Flask(__name__)
 
-# Load model AI
-MODEL_PATH = os.path.join("model", "plant_model.h5")  # <-- sesuaikan nama folder & file
-model = tf.keras.models.load_model(MODEL_PATH)
+# ===========================
+# LOAD TFLITE MODEL
+# ===========================
+interpreter = tf.lite.Interpreter(model_path="plant_model.tflite")
+interpreter.allocate_tensors()
 
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
 
-# Daftar label sesuai training
-labels = ["bacterial_spot", "early_blight", "late_blight", "leaf_mold", "healthy"]
+IMG_SIZE = 150  # sesuaikan dengan training
+LABELS = [
+    "bacterial_spot",
+    "early_blight",
+    "late_blight",
+    "leaf_mold",
+    "healthy"
+]
 
-# Saran perawatan
-disease_advice = {
-    "bacterial_spot": "Potong bagian daun yang sakit dan semprot fungisida.",
-    "early_blight": "Jaga kelembaban tanah, semprot fungisida preventif.",
-    "late_blight": "Buang daun yang terinfeksi dan gunakan fungisida.",
-    "leaf_mold": "Tingkatkan sirkulasi udara, semprot larutan fungisida.",
-    "healthy": "Tanaman sehat. Lanjutkan perawatan rutin."
-}
+@app.route("/")
+def home():
+    return jsonify({"message": "Plant Disease API is running!"})
 
-@app.route('/predict', methods=['POST'])
+# ===========================
+# PREDICT ENDPOINT
+# ===========================
+@app.route("/predict", methods=["POST"])
 def predict():
-    if 'file' not in request.files:
-        return jsonify({"error": "Tidak ada file di request"}), 400
-    
-    file = request.files['file']
-    filename = secure_filename(file.filename)
-    filepath = os.path.join("uploads", filename)
-    os.makedirs("uploads", exist_ok=True)
-    file.save(filepath)
+    if "file" not in request.files:
+        return jsonify({"error": "no file uploaded"}), 400
 
-    # Preprocessing gambar agar sesuai input model
-    # Preprocessing gambar agar sesuai input model CNN
-    img = image.load_img(filepath, target_size=(150, 150))  # harus sama dengan training
-    img_array = image.img_to_array(img)
-    img_array = np.expand_dims(img_array, axis=0) / 255.0  # normalisasi seperti ImageDataGenerator
+    file = request.files["file"]
 
+    # Convert file → image
+    img = Image.open(file.stream).convert("RGB")
+    img = img.resize((IMG_SIZE, IMG_SIZE))
+    img_array = np.array(img, dtype=np.float32) / 255.0
+
+    # reshape menjadi input TFLite
+    img_array = np.expand_dims(img_array, axis=0)
+
+    # Masukkan input
+    interpreter.set_tensor(input_details[0]['index'], img_array)
 
     # Prediksi
-    preds = model.predict(img_array)
-    predicted_index = np.argmax(preds[0])
-    prediction = labels[predicted_index]
-    advice = disease_advice.get(prediction, "Tidak ada saran perawatan.")
-    
-    return jsonify({
-        "prediction": prediction,
-        "advice": advice
-    })
+    interpreter.invoke()
+    preds = interpreter.get_tensor(output_details[0]['index'])
 
-if __name__ == '__main__':
-    app.run(debug=True)
+    class_id = int(np.argmax(preds))
+    confidence = float(np.max(preds))
+
+    # Rekomendasi perawatan
+    treatment = {
+        "bacterial_spot": "Gunakan fungisida tembaga dan hindari kelembapan berlebih.",
+        "early_blight": "Pangkas daun yang terinfeksi dan semprot fungisida.",
+        "late_blight": "Gunakan fungisida berbahan aktif chlorothalonil.",
+        "leaf_mold": "Kurangi kelembaban dan tingkatkan ventilasi tanaman.",
+        "healthy": "Tanaman sehat! Tetap rawat dengan penyiraman & nutrisi yang baik."
+    }
+
+    result = {
+        "class": LABELS[class_id],
+        "confidence": round(confidence, 4),
+        "treatment": treatment[LABELS[class_id]]
+    }
+
+    return jsonify(result)
+
+# ===========================
+# RUN
+# ===========================
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
