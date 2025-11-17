@@ -36,9 +36,11 @@ def predict():
     file.save(filepath)
 
     # Preprocessing gambar agar sesuai input model
-    img = image.load_img(filepath, target_size=(224, 224))  # sesuaikan ukuran modelmu
+    # Preprocessing gambar agar sesuai input model CNN
+    img = image.load_img(filepath, target_size=(150, 150))  # harus sama dengan training
     img_array = image.img_to_array(img)
-    img_array = np.expand_dims(img_array, axis=0) / 255.0  # normalisasi
+    img_array = np.expand_dims(img_array, axis=0) / 255.0  # normalisasi seperti ImageDataGenerator
+
 
     # Prediksi
     preds = model.predict(img_array)
