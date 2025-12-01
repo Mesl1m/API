@@ -4,26 +4,19 @@ from PIL import Image
 import tensorflow as tf
 import os
 import logging
+import json   # <-- Tambahkan ini
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
 # CONFIG
-MODEL_PATH = "plant_model.tflite"    # pastikan file ini ada di repo
-LABELS_PATH = "labels.txt"           # pastikan file ini ada
-IMG_SIZE = 150                       # sesuai training (150x150)
+MODEL_PATH = "plant_model.tflite"
+LABELS_PATH = "labels.txt"
+ADVICE_PATH = "advice.json"   # <-- Path ke file advice.json
+IMG_SIZE = 150
 
-# --- THRESHOLD UNTUK MENOLAK GAMBAR NON-DAUN ---
-THRESHOLD = 0.60   # ubah ke 0.7 / 0.8 jika ingin lebih ketat
-
-# --- OPTIONAL TREATMENT ---
-TREATMENT = {
-    "bacterial_spot": "Gunakan fungisida tembaga dan hindari kelembapan berlebih.",
-    "early_blight": "Pangkas daun yang terinfeksi dan semprot fungisida.",
-    "late_blight": "Gunakan fungisida berbahan aktif chlorothalonil.",
-    "leaf_mold": "Kurangi kelembaban dan tingkatkan ventilasi tanaman.",
-    "healthy": "Tanaman sehat! Tetap rawat dengan penyiraman & nutrisi yang baik."
-}
+# THRESHOLD
+THRESHOLD = 0.60
 
 # LOAD LABELS
 if os.path.exists(LABELS_PATH):
@@ -33,6 +26,15 @@ if os.path.exists(LABELS_PATH):
 else:
     LABELS = []
     app.logger.warning("labels.txt not found!")
+
+# LOAD ADVICE.JSON
+if os.path.exists(ADVICE_PATH):
+    with open(ADVICE_PATH, "r") as f:
+        ADVICE = json.load(f)
+    app.logger.info("Loaded advice.json successfully.")
+else:
+    ADVICE = {}
+    app.logger.warning("advice.json not found!")
 
 # LOAD TFLITE MODEL
 if not os.path.exists(MODEL_PATH):
@@ -46,7 +48,7 @@ app.logger.info("Model loaded successfully.")
 
 @app.route("/")
 def home():
-    return jsonify({"message": "Plant Detector API (TFLite) is running."})
+    return jsonify({"message": "Plant Detector API is running."})
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -62,7 +64,6 @@ def predict():
 
         input_index = input_details[0]['index']
 
-        # handle uint8 model input
         if input_details[0]['dtype'] == np.uint8:
             img_array_uint8 = (img_array * 255).astype(np.uint8)
             interpreter.set_tensor(input_index, img_array_uint8)
@@ -76,30 +77,26 @@ def predict():
         if preds.ndim == 1:
             preds = np.expand_dims(preds, axis=0)
 
-        # CEK KECOCOKAN LABEL
         if len(LABELS) != preds.shape[1]:
             return jsonify({
-                "error": "Label count mismatch with model output!",
+                "error": "Label mismatch!",
                 "labels_found": len(LABELS),
                 "model_output_classes": preds.shape[1]
             }), 500
 
-        # --- AMBIL PREDIKSI ---
         class_id = int(np.argmax(preds[0]))
         confidence = float(np.max(preds[0]))
         predicted_label = LABELS[class_id]
 
-        # ================================
-        #   THRESHOLD REJECTION SYSTEM
-        # ================================
         if confidence < THRESHOLD:
             return jsonify({
                 "class": "unknown",
                 "confidence": round(confidence, 4),
-                "error": "Gambar bukan daun atau tidak bisa dikenali. Mohon upload foto daun yang jelas."
+                "error": "Gambar bukan daun atau tidak dapat dikenali."
             }), 200
 
-        treatment = TREATMENT.get(predicted_label, "Tidak ada saran khusus.")
+        # Ambil treatment dari advice.json
+        treatment = ADVICE.get(predicted_label, ["Tidak ada saran perawatan tersedia."])
 
         return jsonify({
             "class": predicted_label,

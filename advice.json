@@ -1,0 +1,113 @@
+{
+  "Pepper__bell___Bacterial_spot": [
+    "Buang daun yang terinfeksi untuk mencegah penyebaran.",
+    "Hindari penyiraman dari atas dan gunakan penyiraman langsung ke tanah.",
+    "Semprotkan bakterisida berbahan dasar tembaga (copper-based).",
+    "Pastikan jarak antar tanaman cukup agar tidak terlalu lembab."
+  ],
+
+  "Pepper__bell___healthy": [
+    "Tanaman dalam kondisi sehat.",
+    "Lakukan penyiraman teratur dan tidak berlebihan.",
+    "Berikan pupuk NPK seimbang sesuai jadwal.",
+    "Lakukan pengecekan hama secara berkala."
+  ],
+
+  "PlantVillage": [
+    "Daun dalam kondisi sehat.",
+    "Lakukan pemupukan secara berkala.",
+    "Pastikan pencahayaan dan ventilasi cukup.",
+    "Cegah serangan jamur dengan menjaga kelembapan."
+  ],
+
+  "Potato___Early_blight": [
+    "Buang semua daun yang menunjukkan bercak dan cincin konsentris.",
+    "Semprotkan fungisida seperti chlorothalonil atau mancozeb.",
+    "Hindari penyiraman langsung ke daun dan fokuskan ke tanah.",
+    "Pastikan sirkulasi udara pada tanaman baik."
+  ],
+
+  "Potato___Late_blight": [
+    "Semprotkan fungisida seperti metalaxyl atau cymoxanil.",
+    "Kurangi kelembapan daun dan hindari genangan air.",
+    "Tingkatkan ventilasi udara di sekitar tanaman.",
+    "Buang daun atau tanaman yang sangat terinfeksi."
+  ],
+
+  "Potato___healthy": [
+    "Tanaman dalam kondisi sehat.",
+    "Lakukan penyiraman teratur tanpa membuat tanah terlalu basah.",
+    "Berikan pupuk organik atau NPK seimbang.",
+    "Cek kondisi tanaman secara berkala."
+  ],
+
+  "Tomato_Bacterial_spot": [
+    "Pangkas dan buang daun yang terkena bercak hitam.",
+    "Semprot bakterisida berbahan tembaga.",
+    "Hindari penyiraman dari atas, fokuskan ke tanah.",
+    "Perbaiki ventilasi dan jarak tanam."
+  ],
+
+  "Tomato_Early_blight": [
+    "Singkirkan daun yang terkena bercak coklat konsentris.",
+    "Gunakan fungisida seperti chlorothalonil atau mancozeb.",
+    "Atur jarak tanam agar sirkulasi udara baik.",
+    "Hindari kelembapan daun berlebih."
+  ],
+
+  "Tomato_Late_blight": [
+    "Gunakan fungisida seperti metalaxyl atau cymoxanil.",
+    "Kurangi kelembapan daun dan hindari penyiraman dari atas.",
+    "Buang daun yang terinfeksi parah.",
+    "Pastikan tanaman mendapatkan udara yang cukup."
+  ],
+
+  "Tomato_Leaf_Mold": [
+    "Semprot fungisida seperti sulfur atau copper oxychloride.",
+    "Kurangi kelembapan dan tingkatkan ventilasi.",
+    "Hindari overwatering.",
+    "Buang daun yang menunjukkan gejala jamur."
+  ],
+
+  "Tomato_Septoria_leaf_spot": [
+    "Buang daun yang terkena bercak keabu-abuan.",
+    "Gunakan fungisida seperti chlorothalonil atau mancozeb.",
+    "Kurangi kelembapan sekitar tanaman.",
+    "Lakukan rotasi tanaman pada musim berikutnya."
+  ],
+
+  "Tomato_Spider_mites_Two_spotted_spider_mite": [
+    "Cuci daun dengan air sabun lembut untuk mengurangi tungau.",
+    "Gunakan mitisida seperti abamectin atau bifenthrin.",
+    "Naikkan kelembapan karena tungau tidak suka kondisi lembab.",
+    "Periksa seluruh daun untuk memastikan tidak ada jaring halus."
+  ],
+
+  "Tomato__Target_Spot": [
+    "Semprot fungisida seperti azoxystrobin atau chlorothalonil.",
+    "Buang daun yang terkena bercak target.",
+    "Kurangi kelembapan sekitar tanaman.",
+    "Pastikan tanaman mendapat sirkulasi udara yang cukup."
+  ],
+
+  "Tomato__Tomato_YellowLeaf__Curl_Virus": [
+    "Virus ini tidak dapat disembuhkan.",
+    "Hapus tanaman yang terinfeksi agar tidak menular.",
+    "Kendalikan whiteflies (kutu putih) menggunakan insektisida seperti imidacloprid.",
+    "Gunakan benih tahan virus pada musim tanam berikutnya."
+  ],
+
+  "Tomato__Tomato_mosaic_virus": [
+    "Tidak ada obat untuk virus ToMV.",
+    "Buang tanaman yang menunjukkan gejala berat.",
+    "Sterilkan alat berkebun sebelum dan sesudah digunakan.",
+    "Gunakan benih yang bebas virus."
+  ],
+
+  "Tomato_healthy": [
+    "Tanaman tomat sehat.",
+    "Lakukan pemupukan seimbang secara berkala.",
+    "Jaga agar tanaman mendapat cahaya matahari cukup.",
+    "Cek daun secara rutin untuk memastikan tidak ada gejala penyakit."
+  ]
+}
