@@ -4,56 +4,39 @@ from PIL import Image
 import tensorflow as tf
 import os
 import logging
-import json
-import mysql.connector
-from datetime import datetime
+import json   # <-- Tambahkan ini
 
-# =============================
-# DB CONNECTION
-# =============================
-def get_db():
-    return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="password",
-        database="botaniq"
-    )
-
-# =============================
-# APP CONFIG
-# =============================
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
+# CONFIG
 MODEL_PATH = "plant_model.tflite"
 LABELS_PATH = "labels.txt"
-ADVICE_PATH = "advice.json"
+ADVICE_PATH = "advice.json"   # <-- Path ke file advice.json
 IMG_SIZE = 150
+
+# THRESHOLD
 THRESHOLD = 0.60
 
-# =============================
 # LOAD LABELS
-# =============================
 if os.path.exists(LABELS_PATH):
     with open(LABELS_PATH, "r") as f:
-        LABELS = [line.strip() for line in f if line.strip()]
+        LABELS = [line.strip() for line in f.readlines() if line.strip()]
+    app.logger.info(f"Loaded labels: {LABELS}")
 else:
     LABELS = []
     app.logger.warning("labels.txt not found!")
 
-# =============================
-# LOAD ADVICE
-# =============================
+# LOAD ADVICE.JSON
 if os.path.exists(ADVICE_PATH):
     with open(ADVICE_PATH, "r") as f:
         ADVICE = json.load(f)
+    app.logger.info("Loaded advice.json successfully.")
 else:
     ADVICE = {}
     app.logger.warning("advice.json not found!")
 
-# =============================
-# LOAD MODEL
-# =============================
+# LOAD TFLITE MODEL
 if not os.path.exists(MODEL_PATH):
     raise SystemExit("Missing TFLite model file.")
 
@@ -61,10 +44,8 @@ interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
 interpreter.allocate_tensors()
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
+app.logger.info("Model loaded successfully.")
 
-# =============================
-# ROUTES
-# =============================
 @app.route("/")
 def home():
     return jsonify({"message": "Plant Detector API is running."})
@@ -75,63 +56,48 @@ def predict():
         return jsonify({"error": "no file uploaded"}), 400
 
     try:
-        # =============================
-        # IMAGE PROCESSING
-        # =============================
         file = request.files["file"]
         img = Image.open(file.stream).convert("RGB")
         img = img.resize((IMG_SIZE, IMG_SIZE))
         img_array = np.array(img, dtype=np.float32) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
 
-        interpreter.set_tensor(
-            input_details[0]['index'],
-            img_array.astype(np.float32)
-        )
-        interpreter.invoke()
-        preds = interpreter.get_tensor(output_details[0]['index'])[0]
+        input_index = input_details[0]['index']
 
-        # =============================
-        # PREDICTION
-        # =============================
-        class_id = int(np.argmax(preds))
-        confidence = float(np.max(preds))
+        if input_details[0]['dtype'] == np.uint8:
+            img_array_uint8 = (img_array * 255).astype(np.uint8)
+            interpreter.set_tensor(input_index, img_array_uint8)
+        else:
+            interpreter.set_tensor(input_index, img_array.astype(np.float32))
+
+        interpreter.invoke()
+        preds = interpreter.get_tensor(output_details[0]['index'])
+        preds = np.array(preds)
+
+        if preds.ndim == 1:
+            preds = np.expand_dims(preds, axis=0)
+
+        if len(LABELS) != preds.shape[1]:
+            return jsonify({
+                "error": "Label mismatch!",
+                "labels_found": len(LABELS),
+                "model_output_classes": preds.shape[1]
+            }), 500
+
+        class_id = int(np.argmax(preds[0]))
+        confidence = float(np.max(preds[0]))
         predicted_label = LABELS[class_id]
 
         if confidence < THRESHOLD:
             return jsonify({
                 "class": "unknown",
                 "confidence": round(confidence, 4),
-                "error": "Gambar tidak dikenali"
+                "error": "Gambar bukan daun atau tidak dapat dikenali."
             }), 200
 
-        treatment = ADVICE.get(
-            predicted_label,
-            ["Tidak ada saran perawatan tersedia."]
-        )
+        # Ambil treatment dari advice.json
+        treatment = ADVICE.get(predicted_label, ["Tidak ada saran perawatan tersedia."])
 
-        # =============================
-        # SAVE LOG TO DATABASE ✅
-        # =============================
-        try:
-            db = get_db()
-            cursor = db.cursor()
-            cursor.execute(
-                """
-                INSERT INTO detection_logs (class_name, confidence, created_at)
-                VALUES (%s, %s, %s)
-                """,
-                (predicted_label, confidence, datetime.now())
-            )
-            db.commit()
-            cursor.close()
-            db.close()
-        except Exception as db_error:
-            app.logger.error(f"DB ERROR: {db_error}")
-
-        # =============================
-        # RESPONSE
-        # =============================
         return jsonify({
             "class": predicted_label,
             "confidence": round(confidence, 4),
@@ -140,13 +106,7 @@ def predict():
 
     except Exception as e:
         app.logger.exception("Error in /predict")
-        return jsonify({
-            "error": "internal error",
-            "detail": str(e)
-        }), 500
+        return jsonify({"error": "internal error", "detail": str(e)}), 500
 
-# =============================
-# RUN APP
-# =============================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
