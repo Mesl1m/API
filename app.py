@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 # CONFIG
 # ======================================================
 PLANT_MODEL_PATH = "plant_model.tflite"
-HUMAN_MODEL_PATH = "best.pt"                # YOLO MODEL
+HUMAN_MODEL_PATH = "bestygkedua.pt"                # YOLO MODEL
 LABELS_PATH = "labels.txt"
 ADVICE_PLANT_PATH = "advice.json"           # DAUN
 ADVICE_HUMAN_PATH = "advicehuman.json"      # MANUSIA
