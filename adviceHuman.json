@@ -1,0 +1,30 @@
+{
+    "human": [
+        "Terdeteksi manusia tipe: 'Gapapa kok' — biasanya ngomong gitu sambil nahan marah 78%.",
+        "Saran perawatan: kasih es krim, peluk, dan bilang 'kamu nggak salah kok'.",
+        "Kemungkinan besar lagi mikir: 'aku gapapa' tapi notif WA bikin overthinking 3 jam.",
+        "Rekomendasi maintenance: tidur 8 jam, tapi kemungkinan besar tetap scroll TikTok sampai jam 3 pagi.",
+        "Warning: mood fragile. Hindari kalimat 'terserah' karena bisa memicu update firmware emosional."
+    ],
+
+    "overthinking_mode": [
+        "Terdeteksi: manusia sedang overthinking padahal cuman ditanya 'udah makan?'",
+        "Saran perawatan: tarik napas, minum air putih, jangan kepikiran sampe buat skenario dunia runtuh.",
+        "Biasanya setelah bilang 'gapapa kok' langsung replay chat dari 2018.",
+        "Maintenance: kasih video kucing, biasanya efektif."
+    ],
+
+    "bucin_energy": [
+        "Terdeteksi manusia level: BUCIN PRO MAX ULTRA.",
+        "Saran perawatan: ingatkan bahwa chat dibalas lama bukan berarti dia benci kamu.",
+        "Biasanya bilang 'gapapa kok' padahal nunggu chat balasan dari jam 06.00.",
+        "Maintenance: ingatkan untuk makan, bukan cuma nunggu dia chat duluan."
+    ],
+
+    "sok_kuat_mode": [
+        "AI mendeteksi: manusia sok kuat tapi hatinya kayak kerupuk kena kuah — rapuh bos.",
+        "Saran perawatan: bilang 'kamu hebat banget, sini cerita' selama 3 kali per hari.",
+        "Biasanya bilang 'gapapa kok' sambil nahan nangis level 43%.",
+        "Maintenance: tidur cepat, jangan pura-pura kuat mulu."
+    ]
+}
