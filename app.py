@@ -15,20 +15,20 @@ logging.basicConfig(level=logging.INFO)
 # CONFIG
 # ======================================================
 PLANT_MODEL_PATH = "plant_model.tflite"
-HUMAN_MODEL_PATH = "bestygkedua.pt"                # YOLO MODEL
+HUMAN_MODEL_PATH = "bestygkedua.pt"      # YOLO MODEL
 LABELS_PATH = "labels.txt"
-ADVICE_PLANT_PATH = "advice.json"           # DAUN
-ADVICE_HUMAN_PATH = "advicehuman.json"      # MANUSIA
+ADVICE_PLANT_PATH = "advice.json"        # DAUN
+ADVICE_HUMAN_PATH = "advicehuman.json"   # MANUSIA
 IMG_SIZE = 150
 
 THRESHOLD_PLANT = 0.60
-THRESHOLD_HUMAN = 0.50   # YOLO confidence person
+THRESHOLD_HUMAN = 0.50
 
 # ======================================================
 # LOAD YOLO HUMAN DETECTOR
 # ======================================================
 if not os.path.exists(HUMAN_MODEL_PATH):
-    raise SystemExit("Missing YOLO model file best.pt")
+    raise SystemExit("Missing YOLO model file bestygkedua.pt")
 
 human_model = YOLO(HUMAN_MODEL_PATH)
 app.logger.info("YOLO model loaded successfully.")
@@ -37,7 +37,7 @@ app.logger.info("YOLO model loaded successfully.")
 # LOAD PLANT TFLITE MODEL
 # ======================================================
 if not os.path.exists(PLANT_MODEL_PATH):
-    raise SystemExit("Missing plant TFLite model file.")
+    raise SystemExit("Missing plant_model.tflite")
 
 interpreter = tf.lite.Interpreter(model_path=PLANT_MODEL_PATH)
 interpreter.allocate_tensors()
@@ -55,7 +55,7 @@ else:
     app.logger.warning("labels.txt not found!")
 
 # ======================================================
-# LOAD ADVICE FOR PLANT
+# LOAD ADVICE PLANT
 # ======================================================
 if os.path.exists(ADVICE_PLANT_PATH):
     with open(ADVICE_PLANT_PATH, "r") as f:
@@ -65,7 +65,7 @@ else:
     app.logger.warning("advice.json (plant) not found!")
 
 # ======================================================
-# LOAD ADVICE FOR HUMAN
+# LOAD ADVICE HUMAN
 # ======================================================
 if os.path.exists(ADVICE_HUMAN_PATH):
     with open(ADVICE_HUMAN_PATH, "r") as f:
@@ -81,52 +81,51 @@ def get_random_human_advice():
     if not ADVICE_HUMAN:
         return {"type": "unknown", "messages": ["No human advice available."]}
 
-    category = random.choice(list(ADVICE_HUMAN.keys()))
-    messages = ADVICE_HUMAN[category]
-
-    return {
-        "type": category,
-        "messages": messages
-    }
+    cat = random.choice(list(ADVICE_HUMAN.keys()))
+    return {"type": cat, "messages": ADVICE_HUMAN[cat]}
 
 # ======================================================
-# FUNGSI CEK MANUSIA (YOLO)
+# YOLO HUMAN DETECTION
 # ======================================================
 def predict_human(image_path):
     result = human_model(image_path)[0]
-    best_conf = 0
+    best_conf = 0.0
 
     for box in result.boxes:
-        cls = int(box.cls[0])     # class id
-        conf = float(box.conf[0]) # confidence
+        cls = int(box.cls[0])
+        conf = float(box.conf[0])
 
-        if cls == 0 and conf > best_conf:  # class 0 = person
+        if cls == 0 and conf > best_conf:  # YOLO class 0 = person
             best_conf = conf
 
     return best_conf
 
 # ======================================================
-# FUNGSI CEK DAUN (TFLITE)
+# PLANT CLASSIFICATION (TFLITE)
 # ======================================================
 def predict_plant(image_path):
+    # Load original image (no resize)
     img = Image.open(image_path).convert("RGB")
-    img = img.resize((IMG_SIZE, IMG_SIZE))
-    img_array = np.array(img, dtype=np.float32) / 255.0
+
+    # COPY image for model input (resize to 150x150)
+    img_model = img.resize((IMG_SIZE, IMG_SIZE))
+    img_array = np.array(img_model, dtype=np.float32) / 255.0
     img_array = np.expand_dims(img_array, axis=0)
 
-    if input_details[0]['dtype'] == np.uint8:
+    # For uint8 tflite model
+    if input_details[0]["dtype"] == np.uint8:
         img_array = (img_array * 255).astype(np.uint8)
 
-    interpreter.set_tensor(input_details[0]['index'], img_array)
+    interpreter.set_tensor(input_details[0]["index"], img_array)
     interpreter.invoke()
-    preds = interpreter.get_tensor(output_details[0]['index'])
+
+    preds = interpreter.get_tensor(output_details[0]["index"])
 
     if preds.ndim == 1:
         preds = np.expand_dims(preds, axis=0)
 
     class_id = int(np.argmax(preds[0]))
     confidence = float(np.max(preds[0]))
-
     label = LABELS[class_id] if class_id < len(LABELS) else "unknown"
 
     return label, confidence
@@ -151,7 +150,7 @@ def predict():
         img_path = "/tmp/uploaded.jpg"
         file.save(img_path)
 
-        # 1. CHECK HUMAN FIRST
+        # 1. HUMAN CHECK
         human_score = predict_human(img_path)
 
         if human_score >= THRESHOLD_HUMAN:
@@ -161,7 +160,7 @@ def predict():
                 "advice": get_random_human_advice()
             })
 
-        # 2. CHECK PLANT
+        # 2. PLANT CHECK
         plant_label, plant_conf = predict_plant(img_path)
 
         if plant_conf >= THRESHOLD_PLANT:
@@ -172,7 +171,7 @@ def predict():
                 "treatment": ADVICE_PLANT.get(plant_label, ["Tidak ada saran perawatan."])
             })
 
-        # 3. UNKNOWN
+        # 3. UNKNOWN OBJECT
         return jsonify({
             "result": "unknown",
             "human_confidence": round(human_score, 4),
@@ -184,7 +183,7 @@ def predict():
         return jsonify({"error": str(e)}), 500
 
 # ======================================================
-# RUN SERVER — FIX FOR RENDER
+# RUN SERVER
 # ======================================================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
