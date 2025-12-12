@@ -81,10 +81,7 @@ def get_random_human_advice():
     if not ADVICE_HUMAN:
         return {"type": "unknown", "messages": ["No human advice available."]}
 
-    # Ambil kategori random (human / overthinking_mode / bucin_energy / sok_kuat_mode)
     category = random.choice(list(ADVICE_HUMAN.keys()))
-
-    # Ambil isi advice sesuai kategori
     messages = ADVICE_HUMAN[category]
 
     return {
@@ -117,7 +114,6 @@ def predict_plant(image_path):
     img_array = np.array(img, dtype=np.float32) / 255.0
     img_array = np.expand_dims(img_array, axis=0)
 
-    # handle uint8 model
     if input_details[0]['dtype'] == np.uint8:
         img_array = (img_array * 255).astype(np.uint8)
 
@@ -151,14 +147,11 @@ def predict():
         return jsonify({"error": "no file uploaded"}), 400
 
     try:
-        # Save file ke /tmp
         file = request.files["file"]
         img_path = "/tmp/uploaded.jpg"
         file.save(img_path)
 
-        # ======================================================
-        # 1. CEK MANUSIA DENGAN YOLO
-        # ======================================================
+        # 1. CHECK HUMAN FIRST
         human_score = predict_human(img_path)
 
         if human_score >= THRESHOLD_HUMAN:
@@ -168,9 +161,7 @@ def predict():
                 "advice": get_random_human_advice()
             })
 
-        # ======================================================
-        # 2. CEK PLANT DENGAN TFLITE
-        # ======================================================
+        # 2. CHECK PLANT
         plant_label, plant_conf = predict_plant(img_path)
 
         if plant_conf >= THRESHOLD_PLANT:
@@ -181,9 +172,7 @@ def predict():
                 "treatment": ADVICE_PLANT.get(plant_label, ["Tidak ada saran perawatan."])
             })
 
-        # ======================================================
         # 3. UNKNOWN
-        # ======================================================
         return jsonify({
             "result": "unknown",
             "human_confidence": round(human_score, 4),
@@ -195,7 +184,8 @@ def predict():
         return jsonify({"error": str(e)}), 500
 
 # ======================================================
-# RUN SERVER
+# RUN SERVER — FIX FOR RENDER
 # ======================================================
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
